@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Sky - Canvas Game</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{height:100vh;display:flex;justify-content:center;align-items:center;background:#182b43;font-family:Arial,sans-serif;overflow:hidden}
+.game-container{position:relative;width:min(100vw,420px);height:min(100vh,680px);overflow:hidden;border-radius:12px;box-shadow:0 10px 40px #0008;background:#70c5ce}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#0005;color:white;text-align:center;padding:20px}
+#overlay h1{font-size:38px;color:#ffdf40;text-shadow:3px 3px #8b4d20;margin-bottom:20px}
+#overlay p{font-size:19px;line-height:1.7;margin:5px}
+#restart{margin-top:20px;padding:13px 28px;font-size:17px;font-weight:bold;color:#54320e;background:#ffdf40;border:none;border-radius:30px;cursor:pointer;box-shadow:0 4px #c49b17}
+#restart:active{transform:translateY(3px);box-shadow:none}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="game-container">
+<canvas id="game"></canvas>
+<div id="overlay"><h1>FLAPPY SKY</h1><p id="message">Press Space to Start</p><button id="restart" class="hidden">Play Again</button></div>
+</div>
+<script>
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
+const overlay=document.getElementById("overlay"),message=document.getElementById("message"),restartButton=document.getElementById("restart");
+const W=420,H=680,GROUND=620;canvas.width=W;canvas.height=H;
+const gravity=.38,jumpStrength=-7.5,pipeWidth=65,pipeGap=170,pipeSpeed=2.6,pipeInterval=95;
+let bird,pipes,score,bestScore=Number(localStorage.getItem("flappyBest"))||0,frame,gameState="start";
+function resetGame(){bird={x:95,y:300,radius:15,velocity:0,rotation:0};pipes=[];score=0;frame=0}
+function startGame(){resetGame();gameState="playing";overlay.classList.add("hidden")}
+function jump(){if(gameState==="start")startGame();if(gameState==="playing")bird.velocity=jumpStrength;else if(gameState==="over"){startGame();bird.velocity=jumpStrength}}
+function endGame(){if(gameState!=="playing")return;gameState="over";if(score>bestScore){bestScore=score;localStorage.setItem("flappyBest",bestScore)}overlay.classList.remove("hidden");message.innerHTML="GAME OVER!<br><br>Score: "+score+"<br>Best: "+bestScore+"<br><br>Press Space to Restart";restartButton.classList.remove("hidden")}
+document.addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();if(!e.repeat)jump()}});
+canvas.addEventListener("pointerdown",e=>{e.preventDefault();jump()});
+restartButton.addEventListener("click",e=>{e.stopPropagation();startGame()});
+function drawBackground(){const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,"#70c5ce");sky.addColorStop(1,"#c3f0e9");ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);ctx.fillStyle="rgba(255,255,255,.65)";for(let i=0;i<4;i++){let x=((i*140-frame*.35)%550+550)%550-60,y=90+i%3*90;ctx.beginPath();ctx.arc(x,y,22,0,Math.PI*2);ctx.arc(x+25,y-10,28,0,Math.PI*2);ctx.arc(x+52,y,22,0,Math.PI*2);ctx.fill()}ctx.fillStyle="#ded895";ctx.fillRect(0,GROUND,W,H-GROUND);ctx.fillStyle="#77c043";ctx.fillRect(0,GROUND,W,12);ctx.fillStyle="#b6a45c";for(let i=0;i<W;i+=30)ctx.fillRect((i-frame*pipeSpeed)%W,GROUND+20,15,5)}
+function drawBird(){ctx.save();ctx.translate(bird.x,bird.y);ctx.rotate(bird.rotation);ctx.fillStyle="#ffcc35";ctx.beginPath();ctx.ellipse(0,0,19,15,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#d58c19";ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#f39a23";ctx.beginPath();ctx.ellipse(-7,5,10,6,-.4,0,Math.PI*2);ctx.fill();ctx.fillStyle="white";ctx.beginPath();ctx.arc(8,-6,6,0,Math.PI*2);ctx.fill();ctx.fillStyle="#222";ctx.beginPath();ctx.arc(10,-6,2.5,0,Math.PI*2);ctx.fill();ctx.fillStyle="#f36b21";ctx.beginPath();ctx.moveTo(16,0);ctx.lineTo(28,4);ctx.lineTo(16,8);ctx.closePath();ctx.fill();ctx.restore()}
+function drawPipe(pipe){const g=ctx.createLinearGradient(pipe.x,0,pipe.x+pipeWidth,0);g.addColorStop(0,"#147d28");g.addColorStop(.45,"#55d63e");g.addColorStop(1,"#16832c");ctx.fillStyle=g;ctx.strokeStyle="#075b20";ctx.lineWidth=3;ctx.fillRect(pipe.x,0,pipeWidth,pipe.top);ctx.strokeRect(pipe.x,0,pipeWidth,pipe.top);ctx.fillRect(pipe.x-5,pipe.top-25,pipeWidth+10,25);ctx.strokeRect(pipe.x-5,pipe.top-25,pipeWidth+10,25);const by=pipe.top+pipeGap;ctx.fillRect(pipe.x,by,pipeWidth,GROUND-by);ctx.strokeRect(pipe.x,by,pipeWidth,GROUND-by);ctx.fillRect(pipe.x-5,by,pipeWidth+10,25);ctx.strokeRect(pipe.x-5,by,pipeWidth+10,25)}
+function createPipe(){const minTop=90,maxTop=GROUND-pipeGap-90;pipes.push({x:W,top:Math.floor(Math.random()*(maxTop-minTop)+minTop),scored:false})}
+function checkCollision(pipe){const r=bird.radius;if(bird.y-r<=0||bird.y+r>=GROUND)return true;const overlapsX=bird.x+r>pipe.x&&bird.x-r<pipe.x+pipeWidth;if(overlapsX){const gapTop=pipe.top,gapBottom=pipe.top+pipeGap;if(bird.y-r<gapTop||bird.y+r>gapBottom)return true}return false}
+function update(){if(gameState!=="playing")return;frame++;bird.velocity+=gravity;bird.y+=bird.velocity;bird.rotation=Math.min(Math.PI/4,Math.max(-.5,bird.velocity*.07));if(frame%pipeInterval===0)createPipe();for(let i=pipes.length-1;i>=0;i--){const p=pipes[i];p.x-=pipeSpeed;if(checkCollision(p)){endGame();return}if(!p.scored&&p.x+pipeWidth<bird.x){p.scored=true;score++}if(p.x+pipeWidth<0)pipes.splice(i,1)}}
+function drawScore(){ctx.textAlign="center";ctx.font="bold 46px Arial";ctx.lineWidth=5;ctx.strokeStyle="#444";ctx.strokeText(score,W/2,75);ctx.fillStyle="#fff";ctx.fillText(score,W/2,75)}
+function draw(){drawBackground();pipes.forEach(drawPipe);drawBird();if(gameState==="playing")drawScore();if(gameState==="start"){ctx.textAlign="center";ctx.fillStyle="#fff";ctx.font="bold 22px Arial";ctx.fillText("BEST: "+bestScore,W/2,75)}}
+function gameLoop(){update();draw();requestAnimationFrame(gameLoop)}
+resetGame();gameLoop();
+</script>
+</body>
+</html>
