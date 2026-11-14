@@ -35,4 +35,10 @@ footer {
   flex: 0 0 auto;
   position: relative;
   z-index: 2;
+}#game {
+  height: calc(min(100dvh, 820px) - 64px);
+}
+
+footer {
+  min-height: 64px;
 }
