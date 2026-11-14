@@ -11,3 +11,28 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 background:radial-gradient(circle at 35% 28%,#fff2a6 0 8%,#ffd64c 18%,#bd7414 62%,#6b3909 100%);
 border:2px solid #ffe38a;box-shadow:0 1px 3px #000b,inset 0 0 0 2px #9b5d0b}
 .coin-icon:after{content:'★';position:absolute;inset:0;display:grid;place-items:center;color:#8b5108;font-size:11px;text-shadow:0 1px #fff0a2}
+html, body {
+  height: auto;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+#game {
+  flex: 0 0 auto;
+}
+
+footer {
+  width: min(100%, 480px);
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
+}
